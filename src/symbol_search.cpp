@@ -22,6 +22,8 @@ void SymbolSearch::_bind_methods()
 {
         ClassDB::bind_method(D_METHOD("_on_filter_changed", "text"), &SymbolSearch::_on_filter_changed);
         ClassDB::bind_method(D_METHOD("_on_item_activated", "index"), &SymbolSearch::_on_item_activated);
+        ClassDB::bind_method(D_METHOD("_on_filter_gui_input", "event"), &SymbolSearch::_on_filter_gui_input);
+        ClassDB::bind_method(D_METHOD("_on_script_editor_input", "event"), &SymbolSearch::_on_script_editor_input);
 }
 
 void SymbolSearch::_load_popup()
@@ -29,9 +31,13 @@ void SymbolSearch::_load_popup()
         popup = memnew(PanelContainer);
         popup->set_as_top_level(true);
 
-        // Parent to script editor so it follows it to detached windows
         if (script_editor) {
                 script_editor->add_child(popup);
+
+                // listen to input directly from script editor to handle detached windows
+                if (!script_editor->is_connected("gui_input", Callable(this, "_on_script_editor_input"))) {
+                        script_editor->connect("gui_input", Callable(this, "_on_script_editor_input"));
+                }
         } else {
                 EditorInterface::get_singleton()->get_base_control()->add_child(popup);
         }
@@ -43,6 +49,7 @@ void SymbolSearch::_load_popup()
         filter_edit->set_placeholder("Search symbol...");
         vbox->add_child(filter_edit);
         filter_edit->connect("text_changed", Callable(this, "_on_filter_changed"));
+        filter_edit->connect("gui_input", Callable(this, "_on_filter_gui_input"));
 
         item_list = memnew(ItemList);
         item_list->set_v_size_flags(Control::SIZE_EXPAND_FILL);
@@ -174,30 +181,57 @@ void SymbolSearch::_on_item_activated(int p_index)
         popup->hide();
 }
 
-void SymbolSearch::_input(const Ref<InputEvent> &event)
+void SymbolSearch::_on_filter_gui_input(const Ref<InputEvent> &p_event)
 {
-        if (!script_editor || !script_editor->is_visible_in_tree())
-        {
-                return;
-        }
+        Ref<InputEventKey> key_event = p_event;
+        if (!key_event.is_valid() || !key_event->is_pressed() || key_event->is_echo()) return;
 
-        Ref<InputEventKey> key_event = event;
-        if (!key_event.is_valid() || key_event->is_echo())
+        auto key = key_event->get_keycode();
+        if (key == KEY_ESCAPE)
         {
-                return;
+                popup->hide();
+                filter_edit->accept_event();
         }
+        else if (key == KEY_UP || key == KEY_DOWN)
+        {
+                int count = item_list->get_item_count();
+                if (count > 0)
+                {
+                        int current = -1;
+                        if (item_list->get_selected_items().size() > 0)
+                        {
+                                current = item_list->get_selected_items()[0];
+                        }
+                        int next = (key == KEY_UP) ? (current - 1) : (current + 1);
+                        next = (next + count) % count;
+                        item_list->select(next);
+                        item_list->ensure_current_is_visible();
+                }
+                filter_edit->accept_event();
+        }
+        else if (key == KEY_ENTER || key == KEY_KP_ENTER)
+        {
+                if (item_list->get_selected_items().size() > 0)
+                {
+                        _on_item_activated(item_list->get_selected_items()[0]);
+                }
+                filter_edit->accept_event();
+        }
+}
 
-        if (key_event->is_pressed() && key_event->get_keycode() == KEY_O && key_event->is_command_or_control_pressed() && key_event->is_shift_pressed())
+void SymbolSearch::_on_script_editor_input(const Ref<InputEvent> &p_event)
+{
+        Ref<InputEventKey> key_event = p_event;
+        if (!key_event.is_valid() || !key_event->is_pressed() || key_event->is_echo()) return;
+
+        if (key_event->get_keycode() == KEY_O && key_event->is_command_or_control_pressed() && key_event->is_shift_pressed())
         {
                 if (!popup->is_visible())
                 {
                         _refresh_symbols();
                         _filter_symbols("");
-
-                        // Recenter based on current window/viewport size
                         popup->show();
                         popup->set_anchors_and_offsets_preset(Control::PRESET_CENTER, Control::PRESET_MODE_KEEP_SIZE);
-
                         filter_edit->set_text("");
                         filter_edit->grab_focus();
                 }
@@ -205,44 +239,28 @@ void SymbolSearch::_input(const Ref<InputEvent> &event)
                 {
                         popup->hide();
                 }
-                get_viewport()->set_input_as_handled();
-                return;
+                script_editor->accept_event();
         }
+}
 
-        if (popup->is_visible() && key_event->is_pressed())
+void SymbolSearch::_input(const Ref<InputEvent> &event)
+{
+        // Still keep this for when the script editor is in the main window and has no gui_input handled
+        if (!script_editor || !script_editor->is_visible_in_tree()) return;
+
+        Ref<InputEventKey> key_event = event;
+        if (!key_event.is_valid() || !key_event->is_pressed() || key_event->is_echo()) return;
+
+        if (key_event->get_keycode() == KEY_O && key_event->is_command_or_control_pressed() && key_event->is_shift_pressed())
         {
-                auto key = key_event->get_keycode();
-
-                if (key == KEY_ESCAPE)
+                if (!popup->is_visible())
                 {
-                        popup->hide();
-                        get_viewport()->set_input_as_handled();
-                }
-                else if (key == KEY_UP || key == KEY_DOWN)
-                {
-                        int count = item_list->get_item_count();
-                        if (count > 0)
-                        {
-                                int current = -1;
-                                if (item_list->get_selected_items().size() > 0)
-                                {
-                                        current = item_list->get_selected_items()[0];
-                                }
-
-                                int next = (key == KEY_UP) ? (current - 1) : (current + 1);
-                                next = (next + count) % count;
-
-                                item_list->select(next);
-                                item_list->ensure_current_is_visible();
-                        }
-                        get_viewport()->set_input_as_handled();
-                }
-                else if (key == KEY_ENTER || key == KEY_KP_ENTER)
-                {
-                        if (item_list->get_selected_items().size() > 0)
-                        {
-                                _on_item_activated(item_list->get_selected_items()[0]);
-                        }
+                        _refresh_symbols();
+                        _filter_symbols("");
+                        popup->show();
+                        popup->set_anchors_and_offsets_preset(Control::PRESET_CENTER, Control::PRESET_MODE_KEEP_SIZE);
+                        filter_edit->set_text("");
+                        filter_edit->grab_focus();
                         get_viewport()->set_input_as_handled();
                 }
         }

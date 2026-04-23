@@ -47,6 +47,8 @@ public:
 
         void _on_filter_changed(const String &p_text);
         void _on_item_activated(int p_index);
+        void _on_filter_gui_input(const Ref<InputEvent> &p_event);
+        void _on_script_editor_input(const Ref<InputEvent> &p_event);
 
         virtual void _input(const Ref<InputEvent> &event) override;
 
