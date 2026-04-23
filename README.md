@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/github/license/travlee/godot-symbol-search" alt="License">
 </p>
 
-This is a plugin for the [Godot Game Engine](https://godotengine.org/) created with [godot-cpp](https://github.com/godotengine/godot-cpp) that provides quick searching/gotos for all symbols in the currently active script file using a *currently* hardcoded keyboard shortcut: `Ctrl + O`. This is a recreation of VSCode's Go To Symbol in Editor, improving workflow efficiency for developers who are familiar with this ... workflow. Mainly just a  pain point for **me** working in Godot.
+This is a plugin for the [Godot Game Engine](https://godotengine.org/) created with [godot-cpp](https://github.com/godotengine/godot-cpp) that provides quick searching/gotos for all symbols in the currently active script file using a **currently** hardcoded keyboard shortcut: `Ctrl + Shift + O`. This is a recreation of VSCode's `Go To Symbol` utility, improving workflow efficiency for developers who are familiar with this ... workflow. Mainly just a pain point for **me** working in Godot. Now solved.
 
 ---
 
@@ -34,15 +34,20 @@ This is a plugin for the [Godot Game Engine](https://godotengine.org/) created w
 
 ## Features
 
-*   fill this out
+*   **Quick Symbol Search**: Instant access to all symbols in the current script using `Ctrl + Shift + O`.
+*   **Fuzzy Matching**: Find symbols quickly by typing just a few characters. Embrace the lazy.
+*   **Real-time Navigation**: The script editor jumps to the symbol's location as you navigate the search list.
+*   **Comprehensive Symbol Extraction**: Identifies and categorizes `func`, `var`, `const`, and `signal` symbols.
+*   **Detached Script Editor Support**: Works seamlessly even when the script editor is popped out.
+*   **Precision Go-To**: Automatically places the caret at the exact line and column of the selected symbol.
 
 ## Usage
 
 Once the plugin is enabled, you can use the following keyboard shortcuts:
 
 *   **Trigger the Popup**:
-    *   Press `Ctrl + O`.
-    *   A popup will appear, displaying a list of symbols in your active script, sorted by the order they appear in your script.
+    *   Press `Ctrl + Shift + O`.
+    *   A popup will appear, displaying a list of symbols in your active script, sorted from top to bottom.
 
 *   **Navigate the List**:
     *   Use the arrow keys to navigate symbols. The script editor will goto the selected symbol's line as you navigate about.
