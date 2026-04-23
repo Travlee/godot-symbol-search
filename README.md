@@ -2,20 +2,20 @@
   <img src="icon.svg" alt="Godot Logo" width="128" height="128" />
 </p>
 
-<h1 align="center">Godot Script Switcher</h1>
+<h1 align="center">Godot Symbol Search</h1>
 
 <p align="center">
-  <b>Quick switching of open scripts in the ScriptEditor with Ctrl + Tab.</b>
+  <b>Quick search/gotos for all symbols in currently active scripts.</b>
 </p>
 
 <p align="center">
-  <a href="https://godotengine.org/asset-library/asset/5035">
+  <!-- <a href="https://godotengine.org/asset-library/asset/xxxx">
     <img src="https://img.shields.io/badge/Godot%20Asset%20Lib-4.6%2B-478cbf?logo=godot-engine" alt="Godot Asset Library">
-  </a>
-  <img src="https://img.shields.io/github/license/travlee/godot-script-switcher" alt="License">
+  </a> -->
+  <img src="https://img.shields.io/github/license/travlee/godot-symbol-search" alt="License">
 </p>
 
-This is a plugin for the [Godot Game Engine](https://godotengine.org/) created with [godot-cpp](https://github.com/godotengine/godot-cpp) that provides quick switching between recently opened scripts using a *currently* hardcoded keyboard shortcut: `Ctrl + Tab`. This is a recreation of VSCode's Quick Open for MRU (Most Recently Used) files, improving workflow efficiency for developers who are familiar with this ... workflow. Mainly just a pain point for **me** working in Godot - so here we are.
+This is a plugin for the [Godot Game Engine](https://godotengine.org/) created with [godot-cpp](https://github.com/godotengine/godot-cpp) that provides quick searching/gotos for all symbols in the currently active script file using a *currently* hardcoded keyboard shortcut: `Ctrl + O`. This is a recreation of VSCode's Go To Symbol in Editor, improving workflow efficiency for developers who are familiar with this ... workflow. Mainly just a  pain point for **me** working in Godot.
 
 ---
 
@@ -23,7 +23,6 @@ This is a plugin for the [Godot Game Engine](https://godotengine.org/) created w
 
 - [Table of Contents](#table-of-contents)
 - [Features](#features)
-- [Todo](#todo)
 - [Usage](#usage)
 - [Installation](#installation)
   - [Godot Asset Library (recommended)](#godot-asset-library-recommended)
@@ -35,66 +34,55 @@ This is a plugin for the [Godot Game Engine](https://godotengine.org/) created w
 
 ## Features
 
-*   **Most Recently Used (MRU) Script History**: Keeps a list of the scripts you have open.
-*   **Quick Switch Popup**: A compact popup window with recent scripts by their file names.
-*   **Keyboard-driven Navigation**: Navigate and select scripts within the popup using familiar keyboard shortcuts.
-*   **Contextual Activation**: The popup only appears when the Script Editor is the active tab, as that makes sense for a script switcher.
-*   **Full Path Tooltips**: Each script in the list displays its full path as a tooltip.
-
-## Todo
-
-*   Add support for Godot Docs in the history.
-*   Capture holding keys, not just presses.
+*   fill this out
 
 ## Usage
 
 Once the plugin is enabled, you can use the following keyboard shortcuts:
 
-*   **Trigger the popup**:
-    *   Press `Ctrl + Tab` and hold `Ctrl`.
-    *   A popup will appear, displaying a list of your open scripts, sorted by how recently they were used.
-    *   *Note: the second item in the list (the previously active script) will be selected, allowing for quick toggling between your two most recent scripts.*
+*   **Trigger the Popup**:
+    *   Press `Ctrl + O`.
+    *   A popup will appear, displaying a list of symbols in your active script, sorted by the order they appear in your script.
 
 *   **Navigate the List**:
-    *   While still holding `Ctrl`, press `Tab`, `Down Arrow`, or `Up Arrow` to select a script.
+    *   Use the arrow keys to navigate symbols. The script editor will goto the selected symbol's line as you navigate about.
 
-*   **Select a script**:
-    *   Release the `Ctrl` key.
-    *   The script currently highlighted in the popup will be opened in the Script Editor.
+*   **Select a Symbol**:
+    *   Press the `Enter` key.
+    *   The editor will goto the line your selected symbol is on in the Script Editor.
 
 ## Installation
 
 ### Godot Asset Library (recommended)
 
 1. Open Godot → **AssetLib** tab
-2. Search **"[GodotScriptSwitcher](https://godotengine.org/asset-library/asset/5035)"** → **Download**
+2. Search **"[GodotSymbolSearch](https://godotengine.org/asset-library/asset/5035)"** → **Download**
 3. In the install dialog, make sure **"Ignore asset root"** is **checked**, then click **Install**
-4. **Project → Project Settings** → **Plugins** → Enable **Godot Script Switcher**
+4. **Project → Project Settings** → **Plugins** → Enable **Godot Symbol Search**
 5. **Restart the Editor**
 
 ### Releases (easy)
 
-Head to releases and download whatever version you want. I'll probably have files for Windows/Linux/Mac available there.
+Head to releases and download whatever version you want. I'll have files for Windows/Linux/Mac available there.
 
 1. Download a release zip.
-   * [Latest release](https://github.com/Travlee/godot-script-switcher/releases/latest)
-   * [All releases](https://github.com/Travlee/godot-script-switcher/releases)
-2. Extract to your project's addons dir: `../addons/godot-script-switcher`.
+   * [Latest release](https://github.com/Travlee/godot-symbol-search/releases/latest)
+   * [All releases](https://github.com/Travlee/godot-symbol-search/releases)
+2. Extract to your project's addons dir: `../addons/godot-symbol-search`.
 3. Enable the plugin:
    1. **Project** → **Project Settings** → **Plugins**
-   2.   Click to enable **Godot Script Switcher**
+   2.   Click to enable **Godot Symbol Search**
 
 ### Manual (fun)
-You'll have to compile it on your target platform and then enable it in your Godot project. This project requries CMake, GCC, and Ninja is recommended.
+You'll have to compile it on your target platform and then enable it in your Godot project. This project requries CMake, GCC, and Ninja **my** preference recommended.
 
 1.  **Clone the Repository**.
     ```bash
-    cd godot-scipt-switcher/
-    git clone https://github.com/travlee/godot-script-switcher.git .
+    cd godot-symbol-search/
+    git clone https://github.com/travlee/godot-symbol-search.git .
     ```
 
-2.  **Compiling**:
-    This plugin is written in C++ using `godot-cpp`. You must compile the plugin for your specific OS and architecture using CMake. **I use Ninja as the build system, if you use Visual Studio, the output dir will differ so you'll have to combine them into the `addons/godot_script_switcher/` dir.**
+2.  **Compiling**: This plugin is written in C++ using `godot-cpp`. You must compile the plugin for your specific OS and architecture using CMake. **I use Ninja as the build system, if you use Visual Studio, the output dir will differ so you'll have to combine them into the `addons/godot_symbol_search/` dir.**
     *   From the root of the project, configure the CMake build:
         ```bash
         cmake -G Ninja -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -103,18 +91,17 @@ You'll have to compile it on your target platform and then enable it in your God
         ```bash
         cmake --build build --config Release
         ```
-    *   After building, simply copy the `./godot/addons/godot_script_switcher/` dir to your project's `./addons/` dir.
+    *   After building, simply copy the `./godot/addons/godot_symbol_search/` dir to your project's `./addons/` dir.
 
 3.  **Enable the Plugin in Godot**:
     *   **Project** → **Project Settings** → **Plugins**
-    *   Click to enable **Godot Script Switcher**
+    *   Click to enable **Godot Symbol Search**
 
 
 ## Technical Details
 
 This plugin is implemented in C++, using Godot's **GDExtension** with [godot-cpp](https://github.com/godotengine/godot-cpp) bindings for blazingly fast performance and deep integration with the Godot editor. Also I wanted to.
 
-The **ScriptSwitcher** class tracks script changes by binding to the `ScriptEditor::editor_script_changed` signal, updating an MRU history variable stored as a **vector** type. It overrides the global `_inputs` method to listen for `Ctrl + Tab` combinations and only displays the quick-open popup if the script editor is active. The popup UI is designed in Godot and saved to a `.tscn` file and dynamically loaded in when the plugin is enabled.
 
 ## Contributing
 
