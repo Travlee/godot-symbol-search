@@ -3,110 +3,60 @@
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/classes/viewport.hpp>
-#include <godot_cpp/classes/packed_scene.hpp>
-#include <algorithm>
+#include <godot_cpp/classes/reg_ex_match.hpp>
+#include <godot_cpp/classes/control.hpp>
+#include <godot_cpp/classes/v_box_container.hpp>
+#include <godot_cpp/classes/scene_tree.hpp>
+#include <godot_cpp/classes/script_editor_base.hpp>
+#include <godot_cpp/classes/code_edit.hpp>
+#include <godot_cpp/classes/window.hpp>
 
 #include "symbol_search.hpp"
 
 using namespace godot;
 
-SymbolSearch::SymbolSearch() {}
+SymbolSearch::SymbolSearch() : popup(nullptr), filter_edit(nullptr), item_list(nullptr), script_editor(nullptr) {}
 SymbolSearch::~SymbolSearch() {}
 
 void SymbolSearch::_bind_methods()
 {
-        ClassDB::bind_method(D_METHOD("_on_script_changed", "script"), &SymbolSearch::_on_script_changed);
-        ClassDB::bind_method(D_METHOD("_on_popup_visibility_changed"), &SymbolSearch::_on_popup_visibility_changed);
+        ClassDB::bind_method(D_METHOD("_on_filter_changed", "text"), &SymbolSearch::_on_filter_changed);
+        ClassDB::bind_method(D_METHOD("_on_item_activated", "index"), &SymbolSearch::_on_item_activated);
 }
 
 void SymbolSearch::_load_popup()
 {
-        ResourceLoader *loader = ResourceLoader::get_singleton();
+        popup = memnew(PanelContainer);
+        popup->set_as_top_level(true);
 
-        const String scene_file_path = ADDON_DIR "godot_script_switcher_panel.tscn";
-
-        Ref<PackedScene> scene_resource = loader->load(scene_file_path);
-
-        if (!scene_resource.is_valid())
-        {
-                UtilityFunctions::printerr("Failed to load popup scene file!");
-                return;
+        // Parent to script editor so it follows it to detached windows
+        if (script_editor) {
+                script_editor->add_child(popup);
+        } else {
+                EditorInterface::get_singleton()->get_base_control()->add_child(popup);
         }
 
-        popup = cast_to<PanelContainer>(scene_resource->instantiate());
-        if (!popup)
-        {
-                UtilityFunctions::printerr("Failed to instantiate popup!");
-                return;
-        }
+        VBoxContainer *vbox = memnew(VBoxContainer);
+        popup->add_child(vbox);
 
-        item_list = popup->get_node<ItemList>("%ItemList");
-        if (!item_list)
-        {
-                UtilityFunctions::printerr("Failed to load ItemList!");
-                return;
-        }
+        filter_edit = memnew(LineEdit);
+        filter_edit->set_placeholder("Search symbol...");
+        vbox->add_child(filter_edit);
+        filter_edit->connect("text_changed", Callable(this, "_on_filter_changed"));
 
-        // ? Not sure which parent is best ...
-        // EditorInterface::get_singleton()->get_base_control()->add_child(popup);
-        add_child(popup);
+        item_list = memnew(ItemList);
+        item_list->set_v_size_flags(Control::SIZE_EXPAND_FILL);
+        item_list->set_custom_minimum_size(Vector2(600, 400));
+        vbox->add_child(item_list);
+        item_list->connect("item_activated", Callable(this, "_on_item_activated"));
 
         popup->hide();
 }
 
 void SymbolSearch::_enter_tree()
 {
-        // set_process_mode(PROCESS_MODE_ALWAYS);
-
-        this->_load_popup();
-
         script_editor = EditorInterface::get_singleton()->get_script_editor();
-        if (script_editor && !script_editor->is_connected("editor_script_changed", Callable(this, "_on_script_changed")))
-        {
-                script_editor->connect("editor_script_changed", Callable(this, "_on_script_changed"));
-        }
-
-        if (!popup->is_connected("visibility_changed", Callable(this, "_on_popup_visibility_changed")))
-        {
-                popup->connect("visibility_changed", Callable(this, "_on_popup_visibility_changed"));
-        }
-
-        script_editor->get_current_script();
-}
-
-void SymbolSearch::_on_popup_visibility_changed()
-{
-        if (!popup->is_visible())
-        {
-                return;
-        }
-
-        if (history.size() == 0 && script_editor->get_open_scripts().size() > 0)
-        {
-                this->_fill_history();
-        }
-
-        this->_update_list();
-
-        if (item_list->get_item_count() > 0 && item_list->get_selected_items().size() == 0)
-        {
-                item_list->select(0);
-        }
-}
-
-// ? Lazy solution to fill history after first enable to avoid crash
-void SymbolSearch::_fill_history()
-{
-        TypedArray<Script> open_scripts = script_editor->get_open_scripts();
-
-        for (const Ref<Script> &script: open_scripts){
-                _on_script_changed(script);
-        }
-
-        Ref<Script> current_script = script_editor->get_current_script();
-        if (current_script.is_valid()){
-                _on_script_changed(current_script);
-        }
+        this->_load_popup();
 }
 
 void SymbolSearch::_exit_tree()
@@ -114,151 +64,186 @@ void SymbolSearch::_exit_tree()
         if (popup)
         {
                 popup->queue_free();
-        }
-
-        if (script_editor && script_editor->is_connected("editor_script_changed", Callable(this, "_on_script_changed")))
-        {
-                script_editor->disconnect("editor_script_changed", Callable(this, "_on_script_changed"));
+                popup = nullptr;
         }
 }
 
-void SymbolSearch::_on_script_changed(const Ref<Script> &script)
+void SymbolSearch::_refresh_symbols()
 {
-        if (script.is_null())
+        all_symbols.clear();
+        if (!script_editor) return;
+
+        Ref<Script> script = script_editor->get_current_script();
+        if (script.is_null()) return;
+
+        String source = script->get_source_code();
+        PackedStringArray lines = source.split("\n");
+
+        Ref<RegEx> regex;
+        regex.instantiate();
+        regex->compile("^\\s*(?:static\\s+)?(func|var|const|signal)\\s+([a-zA-Z_0-9]+)");
+
+        for (int i = 0; i < lines.size(); ++i)
         {
-                UtilityFunctions::printerr("Null script!");
-                return;
-        }
-
-        String path = script->get_path();
-        if (path.is_empty())
-        {
-                UtilityFunctions::printerr("Empty script path!");
-                return;
-        }
-
-        TypedArray<Script> open_scripts = script_editor->get_open_scripts();
-
-        // ? Remove current script from history -> insert it at the front
-        std::erase_if(history, [&](const auto &history_script){
-                if (history_script == path){
-                        return true;
+                Ref<RegExMatch> match = regex->search(lines[i]);
+                if (match.is_valid())
+                {
+                        Symbol s;
+                        s.type = match->get_string(1);
+                        s.name = match->get_string(2);
+                        s.line = i;
+                        s.column = match->get_start(2);
+                        all_symbols.push_back(s);
                 }
-                return false;
-        });
+        }
+}
 
-        history.insert(history.begin(), path);
-
-        // ? make sure history isn't stale; remove any not currently open
-        std::erase_if(history, [&](const auto &history_script){
-                for (const Ref<Script> &open_script : open_scripts) {
-                        if (history_script == open_script->get_path()) {
-                                return false;
-                        }
-                }
+static bool fuzzy_match(const String &p_pattern, const String &p_str)
+{
+        if (p_pattern.is_empty())
                 return true;
-        });
+
+        String pattern = p_pattern.to_lower();
+        String str = p_str.to_lower();
+
+        int p_idx = 0;
+        for (int s_idx = 0; s_idx < str.length() && p_idx < pattern.length(); s_idx++)
+        {
+                if (pattern[p_idx] == str[s_idx])
+                {
+                        p_idx++;
+                }
+        }
+        return p_idx == pattern.length();
 }
 
-void SymbolSearch::_input(const Ref<InputEvent> &event)
+void SymbolSearch::_filter_symbols(const String &p_filter)
 {
-        // TODO rework this to a configurable keybind for the plugin
-
-        // ? Best method I could find to limit functionalty to when script editor is active
-        if (!script_editor->is_visible_in_tree())
+        filtered_symbols.clear();
+        for (const auto &s : all_symbols)
         {
-                return;
-        }
-
-        if (script_editor->get_open_scripts().size() == 0)
-        {
-                return;
-        }
-
-        Ref<InputEventKey> key_event = event;
-
-        if (!key_event.is_valid() || key_event->is_echo())
-        {
-                return;
-        }
-
-        auto key = key_event->get_keycode();
-
-        if (!popup->is_visible() && key_event->is_pressed() && key == KEY_TAB && key_event->is_command_or_control_pressed())
-        {
-                popup->show();
-
-                get_viewport()->set_input_as_handled();
-
-                return;
-        }
-
-        if (popup->is_visible() && !key_event->is_pressed() && key == KEY_CTRL)
-        {
-                popup->hide();
-                get_viewport()->set_input_as_handled();
-
-                if (item_list->get_item_count() == 0)
+                if (fuzzy_match(p_filter, s.name))
                 {
-                        UtilityFunctions::printerr("Empty item_list!");
-                        return;
+                        filtered_symbols.push_back(s);
                 }
-
-                if (item_list->get_selected_items().size() == 0)
-                {
-                        item_list->select(0);
-                }
-
-                int selected_index = item_list->get_selected_items()[0];
-
-                if (selected_index >= history.size())
-                {
-                        UtilityFunctions::printerr("Invalid history item!");
-                        return;
-                }
-                String path = history[selected_index];
-
-                Ref<Resource> script_res = ResourceLoader::get_singleton()->load(path);
-                if (!script_res.is_valid())
-                {
-                        UtilityFunctions::printerr("Invalid script!");
-                        return;
-                }
-                EditorInterface::get_singleton()->edit_resource(script_res);
         }
-
-        if (popup->is_visible() && key_event->is_pressed() && (key == KEY_TAB || key == KEY_DOWN))
-        {
-                int selected_index = item_list->get_selected_items()[0];
-                int next_index = (selected_index + 1) % item_list->get_item_count();
-                item_list->select(next_index);
-                get_viewport()->set_input_as_handled();
-        }
-
-        if (popup->is_visible() && key_event->is_pressed() && key == KEY_UP)
-        {
-                int selected_index = item_list->get_selected_items()[0];
-                int next_index = (selected_index - 1) % item_list->get_item_count();
-                if (next_index < 0){
-                        next_index += item_list->get_item_count();
-                }
-                item_list->select(next_index);
-                get_viewport()->set_input_as_handled();
-        }
+        _update_list();
 }
 
 void SymbolSearch::_update_list()
 {
         item_list->clear();
-        for (const String &path : history)
+        for (const auto &s : filtered_symbols)
         {
-                item_list->add_item(path.get_file());
-                item_list->set_item_tooltip(item_list->get_item_count() - 1, path);
+                int idx = item_list->add_item("[" + s.type + "] " + s.name);
+                item_list->set_item_metadata(idx, s.line);
         }
 
-        // ? Selects previous script for faster switching
-        if (item_list->get_item_count() > 1)
+        if (item_list->get_item_count() > 0)
         {
-                item_list->select(1);
+                item_list->select(0);
+        }
+}
+
+void SymbolSearch::_on_filter_changed(const String &p_text)
+{
+        _filter_symbols(p_text);
+}
+
+void SymbolSearch::_on_item_activated(int p_index)
+{
+        if (p_index < 0 || p_index >= (int)filtered_symbols.size()) return;
+
+        const Symbol &s = filtered_symbols[p_index];
+        script_editor->goto_line(s.line);
+
+        ScriptEditorBase *current_editor = script_editor->get_current_editor();
+        if (current_editor) {
+                Control *base_editor = current_editor->get_base_editor();
+                if (base_editor) {
+                        base_editor->grab_focus();
+
+                        CodeEdit *code_edit = Object::cast_to<CodeEdit>(base_editor);
+                        if (code_edit) {
+                                code_edit->set_caret_line(s.line);
+                                code_edit->set_caret_column(s.column);
+                        }
+                }
+        }
+
+        popup->hide();
+}
+
+void SymbolSearch::_input(const Ref<InputEvent> &event)
+{
+        if (!script_editor || !script_editor->is_visible_in_tree())
+        {
+                return;
+        }
+
+        Ref<InputEventKey> key_event = event;
+        if (!key_event.is_valid() || key_event->is_echo())
+        {
+                return;
+        }
+
+        if (key_event->is_pressed() && key_event->get_keycode() == KEY_O && key_event->is_command_or_control_pressed() && key_event->is_shift_pressed())
+        {
+                if (!popup->is_visible())
+                {
+                        _refresh_symbols();
+                        _filter_symbols("");
+
+                        // Recenter based on current window/viewport size
+                        popup->show();
+                        popup->set_anchors_and_offsets_preset(Control::PRESET_CENTER, Control::PRESET_MODE_KEEP_SIZE);
+
+                        filter_edit->set_text("");
+                        filter_edit->grab_focus();
+                }
+                else
+                {
+                        popup->hide();
+                }
+                get_viewport()->set_input_as_handled();
+                return;
+        }
+
+        if (popup->is_visible() && key_event->is_pressed())
+        {
+                auto key = key_event->get_keycode();
+
+                if (key == KEY_ESCAPE)
+                {
+                        popup->hide();
+                        get_viewport()->set_input_as_handled();
+                }
+                else if (key == KEY_UP || key == KEY_DOWN)
+                {
+                        int count = item_list->get_item_count();
+                        if (count > 0)
+                        {
+                                int current = -1;
+                                if (item_list->get_selected_items().size() > 0)
+                                {
+                                        current = item_list->get_selected_items()[0];
+                                }
+
+                                int next = (key == KEY_UP) ? (current - 1) : (current + 1);
+                                next = (next + count) % count;
+
+                                item_list->select(next);
+                                item_list->ensure_current_is_visible();
+                        }
+                        get_viewport()->set_input_as_handled();
+                }
+                else if (key == KEY_ENTER || key == KEY_KP_ENTER)
+                {
+                        if (item_list->get_selected_items().size() > 0)
+                        {
+                                _on_item_activated(item_list->get_selected_items()[0]);
+                        }
+                        get_viewport()->set_input_as_handled();
+                }
         }
 }
