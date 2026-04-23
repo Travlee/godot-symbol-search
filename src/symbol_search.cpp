@@ -6,20 +6,20 @@
 #include <godot_cpp/classes/packed_scene.hpp>
 #include <algorithm>
 
-#include "script_switcher.hpp"
+#include "symbol_search.hpp"
 
 using namespace godot;
 
-ScriptSwitcher::ScriptSwitcher() {}
-ScriptSwitcher::~ScriptSwitcher() {}
+SymbolSearch::SymbolSearch() {}
+SymbolSearch::~SymbolSearch() {}
 
-void ScriptSwitcher::_bind_methods()
+void SymbolSearch::_bind_methods()
 {
-        ClassDB::bind_method(D_METHOD("_on_script_changed", "script"), &ScriptSwitcher::_on_script_changed);
-        ClassDB::bind_method(D_METHOD("_on_popup_visibility_changed"), &ScriptSwitcher::_on_popup_visibility_changed);
+        ClassDB::bind_method(D_METHOD("_on_script_changed", "script"), &SymbolSearch::_on_script_changed);
+        ClassDB::bind_method(D_METHOD("_on_popup_visibility_changed"), &SymbolSearch::_on_popup_visibility_changed);
 }
 
-void ScriptSwitcher::_load_popup()
+void SymbolSearch::_load_popup()
 {
         ResourceLoader *loader = ResourceLoader::get_singleton();
 
@@ -54,7 +54,7 @@ void ScriptSwitcher::_load_popup()
         popup->hide();
 }
 
-void ScriptSwitcher::_enter_tree()
+void SymbolSearch::_enter_tree()
 {
         // set_process_mode(PROCESS_MODE_ALWAYS);
 
@@ -74,7 +74,7 @@ void ScriptSwitcher::_enter_tree()
         script_editor->get_current_script();
 }
 
-void ScriptSwitcher::_on_popup_visibility_changed()
+void SymbolSearch::_on_popup_visibility_changed()
 {
         if (!popup->is_visible())
         {
@@ -95,7 +95,7 @@ void ScriptSwitcher::_on_popup_visibility_changed()
 }
 
 // ? Lazy solution to fill history after first enable to avoid crash
-void ScriptSwitcher::_fill_history()
+void SymbolSearch::_fill_history()
 {
         TypedArray<Script> open_scripts = script_editor->get_open_scripts();
 
@@ -109,7 +109,7 @@ void ScriptSwitcher::_fill_history()
         }
 }
 
-void ScriptSwitcher::_exit_tree()
+void SymbolSearch::_exit_tree()
 {
         if (popup)
         {
@@ -122,7 +122,7 @@ void ScriptSwitcher::_exit_tree()
         }
 }
 
-void ScriptSwitcher::_on_script_changed(const Ref<Script> &script)
+void SymbolSearch::_on_script_changed(const Ref<Script> &script)
 {
         if (script.is_null())
         {
@@ -160,7 +160,7 @@ void ScriptSwitcher::_on_script_changed(const Ref<Script> &script)
         });
 }
 
-void ScriptSwitcher::_input(const Ref<InputEvent> &event)
+void SymbolSearch::_input(const Ref<InputEvent> &event)
 {
         // TODO rework this to a configurable keybind for the plugin
 
@@ -247,7 +247,7 @@ void ScriptSwitcher::_input(const Ref<InputEvent> &event)
         }
 }
 
-void ScriptSwitcher::_update_list()
+void SymbolSearch::_update_list()
 {
         item_list->clear();
         for (const String &path : history)

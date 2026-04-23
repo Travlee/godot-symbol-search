@@ -1,0 +1,12 @@
+[configuration]
+entry_symbol = "symbol_search_init"
+compatibility_minimum = "4.6"
+reloadable = true
+
+[libraries]
+windows.debug.x86_64 = "res://addons/godot_symbol_search/godot_symbol_search.dll"
+windows.release.x86_64 = "res://addons/godot_symbol_search/godot_symbol_search.dll"
+linux.debug.x86_64 = "res://addons/godot_symbol_search/godot_symbol_search.so"
+linux.release.x86_64 = "res://addons/godot_symbol_search/godot_symbol_search.so"
+macos.debug = "res://addons/godot_symbol_search/godot_symbol_search.dylib"
+macos.release = "res://addons/godot_symbol_search/godot_symbol_search.dylib"

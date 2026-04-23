@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.31.0...4.3.0)
-project(godot_script_switcher)
+project(godot_symbol_search)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -40,7 +40,7 @@ FetchContent_MakeAvailable(godot-cpp)
 
 add_library(${CMAKE_PROJECT_NAME} SHARED
         src/register_types.cpp
-        src/script_switcher.cpp
+        src/symbol_search.cpp
 )
 
 target_link_libraries(${CMAKE_PROJECT_NAME} godot-cpp)

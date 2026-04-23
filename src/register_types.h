@@ -4,5 +4,5 @@
 
 using namespace godot;
 
-void initialize_script_switcher_module(ModuleInitializationLevel p_level);
-void uninitialize_script_switcher_module(ModuleInitializationLevel p_level);
+void initialize_symbol_search_module(ModuleInitializationLevel p_level);
+void uninitialize_symbol_search_module(ModuleInitializationLevel p_level);

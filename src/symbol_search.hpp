@@ -11,9 +11,9 @@
 
 using namespace godot;
 
-class ScriptSwitcher : public EditorPlugin
+class SymbolSearch : public EditorPlugin
 {
-        GDCLASS(ScriptSwitcher, EditorPlugin);
+        GDCLASS(SymbolSearch, EditorPlugin);
 
 private:
         PanelContainer *popup;
@@ -29,8 +29,8 @@ protected:
         static void _bind_methods();
 
 public:
-        ScriptSwitcher();
-        ~ScriptSwitcher();
+        SymbolSearch();
+        ~SymbolSearch();
 
         void _on_popup_visibility_changed();
 
