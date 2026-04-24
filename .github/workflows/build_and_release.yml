@@ -2,11 +2,11 @@ name: Build and Release
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - release
 
 env:
-  PLUGIN_NAME: godot_script_switcher
+  PLUGIN_NAME: godot_symbol_search
 
 jobs:
   build:
@@ -66,7 +66,7 @@ jobs:
 
       - name: Copy docs to plugin dir
         run: >
-          cp LICENSE README.md godot/addons/${{ env.PLUGIN_NAME }}/
+          cp LICENSE README.md TECHNICAL_OVERVIEW.md godot/addons/${{ env.PLUGIN_NAME }}/
 
       - name: Zip plugin directory
         run: |
