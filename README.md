@@ -17,12 +17,19 @@
 
 This is a plugin for the [Godot Game Engine](https://godotengine.org/) created with [godot-cpp](https://github.com/godotengine/godot-cpp) that provides quick searching/gotos for all symbols in the currently active script file using a **currently** hardcoded keyboard shortcut: `Ctrl + Shift + O`. This is a recreation of VSCode's `Go To Symbol` utility, improving workflow efficiency for developers who are familiar with this ... workflow. Mainly just a pain point for **me** working in Godot. Now solved.
 
+<p align="center">
+  <img src="popup_example_1png.png" alt="Godot Symbol Search Overview" width="600">
+</p>
+
 ---
 
 ## Table of Contents
 
 - [Table of Contents](#table-of-contents)
 - [Features](#features)
+- [Screenshots](#screenshots)
+  - [Large Script Symbol List](#large-script-symbol-list)
+  - [Fuzzy Search Filtering](#fuzzy-search-filtering)
 - [Usage](#usage)
 - [Installation](#installation)
   - [Godot Asset Library (recommended)](#godot-asset-library-recommended)
@@ -45,6 +52,18 @@ This is a plugin for the [Godot Game Engine](https://godotengine.org/) created w
 *   **Symbol Cursor Go-To**: Places the caret at the exact line and column of the selected symbol.
 *   **High Performance**: Built with C++ (GDExtension) for near-instant indexing and filtering, even in massive script files.
 
+## Screenshots
+
+### Large Script Symbol List
+<p align="center">
+    <img src="popup_example_large_list.png" alt="Large Symbol List" width="600">
+</p>
+
+### Fuzzy Search Filtering
+<p align="center">
+    <img src="popup_example_large_list_fuzzy_search.png" alt="Fuzzy Search" width="600">
+</p>
+
 ## Usage
 
 Once the plugin is enabled, you can use the following keyboard shortcuts:
@@ -60,15 +79,15 @@ Once the plugin is enabled, you can use the following keyboard shortcuts:
     *   Press the `Enter` key.
     *   The editor will goto the line your selected symbol is on in the Script Editor.
 
+
 ## Installation
 
 ### Godot Asset Library (recommended)
 
 1. Open Godot → **AssetLib** tab
 2. Search **"[GodotSymbolSearch](https://godotengine.org/asset-library/asset/5035)"** → **Download**
-3. In the install dialog, make sure **"Ignore asset root"** is **checked**, then click **Install**
-4. **Project → Project Settings** → **Plugins** → Enable **Godot Symbol Search**
-5. **Restart the Editor**
+3. **Project → Project Settings** → **Plugins** → Enable **Godot Symbol Search**
+4. **Restart the Editor**
 
 ### Releases (easy)
 
