@@ -42,6 +42,7 @@ private:
         void _filter_symbols(const String &p_filter, bool p_keep_closest = false);
         void _goto_symbol(int p_index);
         void _restore_original_cursor();
+        void _grab_editor_focus();
 
 protected:
         static void _bind_methods();

@@ -211,6 +211,18 @@ void SymbolSearch::_restore_original_cursor()
         }
 }
 
+void SymbolSearch::_grab_editor_focus()
+{
+        if (!script_editor) return;
+        ScriptEditorBase *current_editor = script_editor->get_current_editor();
+        if (current_editor) {
+                Control *base_editor = current_editor->get_base_editor();
+                if (base_editor) {
+                        base_editor->grab_focus();
+                }
+        }
+}
+
 void SymbolSearch::_on_item_selected(int p_index)
 {
         _goto_symbol(p_index);
@@ -219,14 +231,7 @@ void SymbolSearch::_on_item_selected(int p_index)
 void SymbolSearch::_on_item_activated(int p_index)
 {
         _goto_symbol(p_index);
-
-        ScriptEditorBase *current_editor = script_editor->get_current_editor();
-        if (current_editor) {
-                Control *base_editor = current_editor->get_base_editor();
-                if (base_editor) {
-                        base_editor->grab_focus();
-                }
-        }
+        _grab_editor_focus();
 
         popup->hide();
 }
@@ -240,6 +245,7 @@ void SymbolSearch::_on_filter_gui_input(const Ref<InputEvent> &p_event)
         if (key == KEY_ESCAPE)
         {
                 _restore_original_cursor();
+                _grab_editor_focus();
                 popup->hide();
                 filter_edit->accept_event();
         }
@@ -301,6 +307,7 @@ void SymbolSearch::_on_script_editor_input(const Ref<InputEvent> &p_event)
                         }
                         else
                         {
+                                _grab_editor_focus();
                                 popup->hide();
                         }
                         script_editor->accept_event();
@@ -351,6 +358,7 @@ void SymbolSearch::_input(const Ref<InputEvent> &event)
                 if (!popup->get_global_rect().has_point(popup->get_global_mouse_position()))
                 {
                         _restore_original_cursor();
+                        _grab_editor_focus();
                         popup->hide();
                 }
         }
