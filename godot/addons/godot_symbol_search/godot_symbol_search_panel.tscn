@@ -32,7 +32,7 @@ Label/colors/font_color = Color(0.6509804, 0.6509804, 0.6509804, 1)
 Label/font_sizes/font_size = 16
 PanelContainer/styles/panel = SubResource("StyleBoxFlat_mqfw4")
 
-[node name="ScriptSwitcherPanel" type="PanelContainer" unique_id=1994007103]
+[node name="SymbolSearchPanel" type="PanelContainer" unique_id=1994007103]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -48,13 +48,10 @@ theme = SubResource("Theme_mqfw4")
 layout_mode = 2
 size_flags_vertical = 0
 
-[node name="HelpLabel" type="Label" parent="VBoxContainer" unique_id=970401896]
+[node name="LineEdit" type="LineEdit" parent="VBoxContainer" unique_id=1816278050]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
-text = "Hold <Ctrl> and tap <Tab>"
-horizontal_alignment = 1
-vertical_alignment = 1
+placeholder_text = "Search symbol ..."
 
 [node name="MarginContainer" type="MarginContainer" parent="VBoxContainer" unique_id=1471907139]
 layout_mode = 2

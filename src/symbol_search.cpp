@@ -11,6 +11,7 @@
 #include <godot_cpp/classes/script_editor_base.hpp>
 #include <godot_cpp/classes/code_edit.hpp>
 #include <godot_cpp/classes/window.hpp>
+#include <godot_cpp/classes/packed_scene.hpp>
 
 #include "symbol_search.hpp"
 
@@ -28,15 +29,52 @@ void SymbolSearch::_bind_methods()
         ClassDB::bind_method(D_METHOD("_on_script_editor_input", "event"), &SymbolSearch::_on_script_editor_input);
 }
 
-void SymbolSearch::_load_popup()
+void SymbolSearch::_init_popup()
 {
-        popup = memnew(PanelContainer);
+        ResourceLoader *loader = ResourceLoader::get_singleton();
+
+        const String scene_file_path = ADDON_DIR "godot_symbol_search_panel.tscn";
+
+        // loader->exists()
+
+        Ref<PackedScene> scene_resource = loader->load(scene_file_path);
+
+        if (!scene_resource.is_valid())
+        {
+                UtilityFunctions::printerr("Failed to load popup scene file!");
+                return;
+        }
+
+        popup = cast_to<PanelContainer>(scene_resource->instantiate());
+        if (!popup)
+        {
+                UtilityFunctions::printerr("Failed to instantiate popup!");
+                return;
+        }
+
+        item_list = popup->get_node<ItemList>("%ItemList");
+        if (!item_list)
+        {
+                UtilityFunctions::printerr("Failed to load ItemList!");
+                return;
+        }
+        item_list->connect("item_selected", Callable(this, "_on_item_selected"));
+        item_list->connect("item_activated", Callable(this, "_on_item_activated"));
+
+        filter_edit = popup->get_node<LineEdit>("%LineEdit");
+        if (!filter_edit)
+        {
+                UtilityFunctions::printerr("Failed to load LineEdit!");
+                return;
+        }
+        filter_edit->connect("text_changed", Callable(this, "_on_filter_changed"));
+        filter_edit->connect("gui_input", Callable(this, "_on_filter_gui_input"));
+
         popup->set_as_top_level(true);
 
         if (script_editor) {
                 script_editor->add_child(popup);
 
-                // listen to input directly from script editor to handle detached windows
                 if (!script_editor->is_connected("gui_input", Callable(this, "_on_script_editor_input"))) {
                         script_editor->connect("gui_input", Callable(this, "_on_script_editor_input"));
                 }
@@ -44,29 +82,13 @@ void SymbolSearch::_load_popup()
                 EditorInterface::get_singleton()->get_base_control()->add_child(popup);
         }
 
-        VBoxContainer *vbox = memnew(VBoxContainer);
-        popup->add_child(vbox);
-
-        filter_edit = memnew(LineEdit);
-        filter_edit->set_placeholder("Search symbol...");
-        vbox->add_child(filter_edit);
-        filter_edit->connect("text_changed", Callable(this, "_on_filter_changed"));
-        filter_edit->connect("gui_input", Callable(this, "_on_filter_gui_input"));
-
-        item_list = memnew(ItemList);
-        item_list->set_v_size_flags(Control::SIZE_EXPAND_FILL);
-        item_list->set_custom_minimum_size(Vector2(600, 400));
-        vbox->add_child(item_list);
-        item_list->connect("item_selected", Callable(this, "_on_item_selected"));
-        item_list->connect("item_activated", Callable(this, "_on_item_activated"));
-
         popup->hide();
 }
 
 void SymbolSearch::_enter_tree()
 {
         script_editor = EditorInterface::get_singleton()->get_script_editor();
-        this->_load_popup();
+        this->_init_popup();
 }
 
 void SymbolSearch::_exit_tree()

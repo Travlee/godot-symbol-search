@@ -37,7 +37,7 @@ private:
         int original_column = 0;
 
         void _update_list(int p_select_idx = 0);
-        void _load_popup();
+        void _init_popup();
         void _refresh_symbols();
         void _filter_symbols(const String &p_filter, bool p_keep_closest = false);
         void _goto_symbol(int p_index);
