@@ -77,3 +77,4 @@ jobs:
         with:
           files: ${{ env.PLUGIN_NAME }}-${{ github.ref_name }}.zip
           generate_release_notes: true
+          tag_name: "v1.0.${{ github.run_number }}"
