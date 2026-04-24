@@ -103,9 +103,9 @@ alignment = 1
 
 [node name="ItemList" type="ItemList" parent="VBoxContainer" unique_id=2039957953]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 400)
 layout_mode = 2
 size_flags_vertical = 3
-auto_height = true
 item_count = 3
 item_0/text = "[signal] finished"
 item_1/text = "[var] foo"

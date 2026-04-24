@@ -187,7 +187,7 @@ void SymbolSearch::_update_list(int p_select_idx)
         {
                 int idx = (p_select_idx >= 0 && p_select_idx < item_list->get_item_count()) ? p_select_idx : 0;
                 item_list->select(idx);
-                item_list->ensure_current_is_visible();
+                item_list->call_deferred("ensure_current_is_visible");
                 _on_item_selected(idx);
         }
 }
@@ -284,7 +284,7 @@ void SymbolSearch::_on_filter_gui_input(const Ref<InputEvent> &p_event)
                         int next = (key == KEY_UP) ? (current - 1) : (current + 1);
                         next = (next + count) % count;
                         item_list->select(next);
-                        item_list->ensure_current_is_visible();
+                        item_list->call_deferred("ensure_current_is_visible");
                         _on_item_selected(next);
                 }
                 filter_edit->accept_event();
