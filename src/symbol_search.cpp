@@ -323,7 +323,7 @@ void SymbolSearch::_on_script_editor_input(const Ref<InputEvent> &p_event)
                                 _refresh_symbols();
                                 _filter_symbols("", true);
                                 popup->show();
-                                popup->set_anchors_and_offsets_preset(Control::PRESET_CENTER, Control::PRESET_MODE_KEEP_SIZE);
+                                popup->set_anchors_and_offsets_preset(Control::PRESET_CENTER_TOP, Control::PRESET_MODE_KEEP_SIZE);
                                 filter_edit->set_text("");
                                 filter_edit->grab_focus();
                         }
@@ -365,7 +365,7 @@ void SymbolSearch::_input(const Ref<InputEvent> &event)
                                 _refresh_symbols();
                                 _filter_symbols("", true);
                                 popup->show();
-                                popup->set_anchors_and_offsets_preset(Control::PRESET_CENTER, Control::PRESET_MODE_KEEP_SIZE);
+                                popup->set_anchors_and_offsets_preset(Control::PRESET_CENTER_TOP, Control::PRESET_MODE_KEEP_SIZE);
                                 filter_edit->set_text("");
                                 filter_edit->grab_focus();
                                 get_viewport()->set_input_as_handled();
