@@ -29,6 +29,8 @@ This is a plugin for the [Godot Game Engine](https://godotengine.org/) created w
   - [Releases (easy)](#releases-easy)
   - [Manual (fun)](#manual-fun)
 - [Technical Details](#technical-details)
+  - [Surface](#surface)
+  - [Deeper](#deeper)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -107,7 +109,20 @@ You'll have to compile it on your target platform and then enable it in your God
 
 ## Technical Details
 
-This plugin is implemented in C++, using Godot's **GDExtension** with [godot-cpp](https://github.com/godotengine/godot-cpp) bindings for blazingly fast performance and deep integration with the Godot editor. Also I wanted to.
+### Surface
+You can write Godot plugins in GDScript fairly easily, but I choose to do this in **C++** which comes with more hurdles but worthy (to me) benefits.
+- **Blazingly Fast**: The main benefit of using `C++`, searching through thousands of lines of code happens instantly without slowing down your editor. I tested this on a 10k LoC file with zero issues.
+- **Full Script Parsing**: The whole active file is `read` to extract out all important symbols (funcs, vars, signals).
+- **Deep Editor Integration**: It hooks directly into the Godot Editor, allowing it to work even if you have your script editor popped out in a separate window.
+
+### Deeper
+This plugin is implemented in C++ using Godot's **GDExtension** system and the [godot-cpp](https://github.com/godotengine/godot-cpp) bindings.
+- **Plugin Architecture**: Inherits from `EditorPlugin` and registers custom logic at the `EDITOR` initialization level.
+- **Symbol Extraction**: Uses `regex` to parse the active `Script` resource's source code on-demand.
+- **UI System**: Built using native Godot `Control` nodes (`PanelContainer`, `LineEdit`, `ItemList`) for consistent styling and low overhead. Also allows for easy style customization by editing the `godot_symbol_search_panel.tscn` scene file.
+- **Input Handling**: Intercepts input events to provide a responsive, modal-like experience without interfering with other editor shortcuts.
+
+For the deepest dive into the implementation, see [TECHNICAL_OVERVIEW.md](TECHNICAL_OVERVIEW.md).
 
 
 ## Contributing
