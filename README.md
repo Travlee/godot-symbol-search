@@ -9,9 +9,9 @@
 </p>
 
 <p align="center">
-  <!-- <a href="https://godotengine.org/asset-library/asset/xxxx">
+  <a href="https://godotengine.org/asset-library/asset/5083">
     <img src="https://img.shields.io/badge/Godot%20Asset%20Lib-4.6%2B-478cbf?logo=godot-engine" alt="Godot Asset Library">
-  </a> -->
+  </a>
   <img src="https://img.shields.io/github/license/travlee/godot-symbol-search" alt="License">
 </p>
 
@@ -85,7 +85,7 @@ Once the plugin is enabled, you can use the following keyboard shortcuts:
 ### Godot Asset Library (recommended)
 
 1. Open Godot → **AssetLib** tab
-2. Search **"[GodotSymbolSearch](https://godotengine.org/asset-library/asset/5035)"** → **Download**
+2. Search **"[GodotSymbolSearch](https://godotengine.org/asset-library/asset/5083)"** → **Download**
 3. **Project → Project Settings** → **Plugins** → Enable **Godot Symbol Search**
 4. **Restart the Editor**
 
