@@ -33,10 +33,15 @@ private:
         std::vector<Symbol> all_symbols;
         std::vector<Symbol> filtered_symbols;
 
-        void _update_list();
+        int original_line = 0;
+        int original_column = 0;
+
+        void _update_list(int p_select_idx = 0);
         void _load_popup();
         void _refresh_symbols();
-        void _filter_symbols(const String &p_filter);
+        void _filter_symbols(const String &p_filter, bool p_keep_closest = false);
+        void _goto_symbol(int p_index);
+        void _restore_original_cursor();
 
 protected:
         static void _bind_methods();
@@ -46,6 +51,7 @@ public:
         ~SymbolSearch();
 
         void _on_filter_changed(const String &p_text);
+        void _on_item_selected(int p_index);
         void _on_item_activated(int p_index);
         void _on_filter_gui_input(const Ref<InputEvent> &p_event);
         void _on_script_editor_input(const Ref<InputEvent> &p_event);

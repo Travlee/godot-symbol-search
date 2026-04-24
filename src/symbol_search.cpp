@@ -1,5 +1,6 @@
 #include <godot_cpp/classes/editor_interface.hpp>
 #include <godot_cpp/classes/input_event_key.hpp>
+#include <godot_cpp/classes/input_event_mouse_button.hpp>
 #include <godot_cpp/classes/resource_loader.hpp>
 #include <godot_cpp/variant/utility_functions.hpp>
 #include <godot_cpp/classes/viewport.hpp>
@@ -21,6 +22,7 @@ SymbolSearch::~SymbolSearch() {}
 void SymbolSearch::_bind_methods()
 {
         ClassDB::bind_method(D_METHOD("_on_filter_changed", "text"), &SymbolSearch::_on_filter_changed);
+        ClassDB::bind_method(D_METHOD("_on_item_selected", "index"), &SymbolSearch::_on_item_selected);
         ClassDB::bind_method(D_METHOD("_on_item_activated", "index"), &SymbolSearch::_on_item_activated);
         ClassDB::bind_method(D_METHOD("_on_filter_gui_input", "event"), &SymbolSearch::_on_filter_gui_input);
         ClassDB::bind_method(D_METHOD("_on_script_editor_input", "event"), &SymbolSearch::_on_script_editor_input);
@@ -55,6 +57,7 @@ void SymbolSearch::_load_popup()
         item_list->set_v_size_flags(Control::SIZE_EXPAND_FILL);
         item_list->set_custom_minimum_size(Vector2(600, 400));
         vbox->add_child(item_list);
+        item_list->connect("item_selected", Callable(this, "_on_item_selected"));
         item_list->connect("item_activated", Callable(this, "_on_item_activated"));
 
         popup->hide();
@@ -124,20 +127,32 @@ static bool fuzzy_match(const String &p_pattern, const String &p_str)
         return p_idx == pattern.length();
 }
 
-void SymbolSearch::_filter_symbols(const String &p_filter)
+void SymbolSearch::_filter_symbols(const String &p_filter, bool p_keep_closest)
 {
         filtered_symbols.clear();
+        int closest_idx = 0;
+        int min_dist = 0x7FFFFFFF;
+
         for (const auto &s : all_symbols)
         {
                 if (fuzzy_match(p_filter, s.name))
                 {
                         filtered_symbols.push_back(s);
+                        if (p_keep_closest)
+                        {
+                                int dist = abs(s.line - original_line);
+                                if (dist < min_dist)
+                                {
+                                        min_dist = dist;
+                                        closest_idx = filtered_symbols.size() - 1;
+                                }
+                        }
                 }
         }
-        _update_list();
+        _update_list(closest_idx);
 }
 
-void SymbolSearch::_update_list()
+void SymbolSearch::_update_list(int p_select_idx)
 {
         item_list->clear();
         for (const auto &s : filtered_symbols)
@@ -148,7 +163,10 @@ void SymbolSearch::_update_list()
 
         if (item_list->get_item_count() > 0)
         {
-                item_list->select(0);
+                int idx = (p_select_idx >= 0 && p_select_idx < item_list->get_item_count()) ? p_select_idx : 0;
+                item_list->select(idx);
+                item_list->ensure_current_is_visible();
+                _on_item_selected(idx);
         }
 }
 
@@ -157,7 +175,7 @@ void SymbolSearch::_on_filter_changed(const String &p_text)
         _filter_symbols(p_text);
 }
 
-void SymbolSearch::_on_item_activated(int p_index)
+void SymbolSearch::_goto_symbol(int p_index)
 {
         if (p_index < 0 || p_index >= (int)filtered_symbols.size()) return;
 
@@ -168,13 +186,45 @@ void SymbolSearch::_on_item_activated(int p_index)
         if (current_editor) {
                 Control *base_editor = current_editor->get_base_editor();
                 if (base_editor) {
-                        base_editor->grab_focus();
-
                         CodeEdit *code_edit = Object::cast_to<CodeEdit>(base_editor);
                         if (code_edit) {
                                 code_edit->set_caret_line(s.line);
                                 code_edit->set_caret_column(s.column);
                         }
+                }
+        }
+}
+
+void SymbolSearch::_restore_original_cursor()
+{
+        script_editor->goto_line(original_line);
+        ScriptEditorBase *current_editor = script_editor->get_current_editor();
+        if (current_editor) {
+                Control *base_editor = current_editor->get_base_editor();
+                if (base_editor) {
+                        CodeEdit *code_edit = Object::cast_to<CodeEdit>(base_editor);
+                        if (code_edit) {
+                                code_edit->set_caret_line(original_line);
+                                code_edit->set_caret_column(original_column);
+                        }
+                }
+        }
+}
+
+void SymbolSearch::_on_item_selected(int p_index)
+{
+        _goto_symbol(p_index);
+}
+
+void SymbolSearch::_on_item_activated(int p_index)
+{
+        _goto_symbol(p_index);
+
+        ScriptEditorBase *current_editor = script_editor->get_current_editor();
+        if (current_editor) {
+                Control *base_editor = current_editor->get_base_editor();
+                if (base_editor) {
+                        base_editor->grab_focus();
                 }
         }
 
@@ -189,6 +239,7 @@ void SymbolSearch::_on_filter_gui_input(const Ref<InputEvent> &p_event)
         auto key = key_event->get_keycode();
         if (key == KEY_ESCAPE)
         {
+                _restore_original_cursor();
                 popup->hide();
                 filter_edit->accept_event();
         }
@@ -206,6 +257,7 @@ void SymbolSearch::_on_filter_gui_input(const Ref<InputEvent> &p_event)
                         next = (next + count) % count;
                         item_list->select(next);
                         item_list->ensure_current_is_visible();
+                        _on_item_selected(next);
                 }
                 filter_edit->accept_event();
         }
@@ -222,46 +274,84 @@ void SymbolSearch::_on_filter_gui_input(const Ref<InputEvent> &p_event)
 void SymbolSearch::_on_script_editor_input(const Ref<InputEvent> &p_event)
 {
         Ref<InputEventKey> key_event = p_event;
-        if (!key_event.is_valid() || !key_event->is_pressed() || key_event->is_echo()) return;
+        if (key_event.is_valid() && key_event->is_pressed() && !key_event->is_echo()) {
+                if (key_event->get_keycode() == KEY_O && key_event->is_command_or_control_pressed() && key_event->is_shift_pressed())
+                {
+                        if (!popup->is_visible())
+                        {
+                                // Save original cursor
+                                ScriptEditorBase *current_editor = script_editor->get_current_editor();
+                                if (current_editor) {
+                                        Control *base_editor = current_editor->get_base_editor();
+                                        if (base_editor) {
+                                                CodeEdit *code_edit = Object::cast_to<CodeEdit>(base_editor);
+                                                if (code_edit) {
+                                                        original_line = code_edit->get_caret_line();
+                                                        original_column = code_edit->get_caret_column();
+                                                }
+                                        }
+                                }
 
-        if (key_event->get_keycode() == KEY_O && key_event->is_command_or_control_pressed() && key_event->is_shift_pressed())
-        {
-                if (!popup->is_visible())
-                {
-                        _refresh_symbols();
-                        _filter_symbols("");
-                        popup->show();
-                        popup->set_anchors_and_offsets_preset(Control::PRESET_CENTER, Control::PRESET_MODE_KEEP_SIZE);
-                        filter_edit->set_text("");
-                        filter_edit->grab_focus();
+                                _refresh_symbols();
+                                _filter_symbols("", true);
+                                popup->show();
+                                popup->set_anchors_and_offsets_preset(Control::PRESET_CENTER, Control::PRESET_MODE_KEEP_SIZE);
+                                filter_edit->set_text("");
+                                filter_edit->grab_focus();
+                        }
+                        else
+                        {
+                                popup->hide();
+                        }
+                        script_editor->accept_event();
+                        return;
                 }
-                else
-                {
-                        popup->hide();
-                }
-                script_editor->accept_event();
         }
 }
 
 void SymbolSearch::_input(const Ref<InputEvent> &event)
 {
-        // Still keep this for when the script editor is in the main window and has no gui_input handled
         if (!script_editor || !script_editor->is_visible_in_tree()) return;
 
         Ref<InputEventKey> key_event = event;
-        if (!key_event.is_valid() || !key_event->is_pressed() || key_event->is_echo()) return;
-
-        if (key_event->get_keycode() == KEY_O && key_event->is_command_or_control_pressed() && key_event->is_shift_pressed())
+        if (key_event.is_valid() && key_event->is_pressed() && !key_event->is_echo())
         {
-                if (!popup->is_visible())
+                if (key_event->get_keycode() == KEY_O && key_event->is_command_or_control_pressed() && key_event->is_shift_pressed())
                 {
-                        _refresh_symbols();
-                        _filter_symbols("");
-                        popup->show();
-                        popup->set_anchors_and_offsets_preset(Control::PRESET_CENTER, Control::PRESET_MODE_KEEP_SIZE);
-                        filter_edit->set_text("");
-                        filter_edit->grab_focus();
-                        get_viewport()->set_input_as_handled();
+                        if (!popup->is_visible())
+                        {
+                                // Save original cursor
+                                ScriptEditorBase *current_editor = script_editor->get_current_editor();
+                                if (current_editor) {
+                                        Control *base_editor = current_editor->get_base_editor();
+                                        if (base_editor) {
+                                                CodeEdit *code_edit = Object::cast_to<CodeEdit>(base_editor);
+                                                if (code_edit) {
+                                                        original_line = code_edit->get_caret_line();
+                                                        original_column = code_edit->get_caret_column();
+                                                }
+                                        }
+                                }
+
+                                _refresh_symbols();
+                                _filter_symbols("", true);
+                                popup->show();
+                                popup->set_anchors_and_offsets_preset(Control::PRESET_CENTER, Control::PRESET_MODE_KEEP_SIZE);
+                                filter_edit->set_text("");
+                                filter_edit->grab_focus();
+                                get_viewport()->set_input_as_handled();
+                        }
+                        return;
+                }
+        }
+
+        Ref<InputEventMouseButton> mouse_event = event;
+        if (mouse_event.is_valid() && mouse_event->is_pressed() && popup->is_visible())
+        {
+                if (!popup->get_global_rect().has_point(popup->get_global_mouse_position()))
+                {
+                        _restore_original_cursor();
+                        popup->hide();
                 }
         }
 }
