@@ -36,10 +36,12 @@ This is a plugin for the [Godot Game Engine](https://godotengine.org/) created w
 
 *   **Quick Symbol Search**: Instant access to all symbols in the current script using `Ctrl + Shift + O`.
 *   **Fuzzy Matching**: Find symbols quickly by typing just a few characters. Embrace the lazy.
-*   **Real-time Navigation**: The script editor jumps to the symbol's location as you navigate the search list.
-*   **Comprehensive Symbol Extraction**: Identifies and categorizes `func`, `var`, `const`, and `signal` symbols.
-*   **Detached Script Editor Support**: Works seamlessly even when the script editor is popped out.
-*   **Precision Go-To**: Automatically places the caret at the exact line and column of the selected symbol.
+*   **Live Navigation**: The script editor jumps to the symbol's location as you navigate the search list, providing an immediate preview.
+*   **Reset Cursor Position**: If you cancel the search (Esc), the cursor position resets to the starting line and column.
+*   **Comprehensive Symbol Extraction**: Currently parses and categorizes `func`, `var`, `const`, `signal`, and `static` symbols.
+*   **Detached Script Editor Support**: Works when script editor is popped out!
+*   **Symbol Cursor Go-To**: Places the caret at the exact line and column of the selected symbol.
+*   **High Performance**: Built with C++ (GDExtension) for near-instant indexing and filtering, even in massive script files.
 
 ## Usage
 
