@@ -261,9 +261,11 @@ void SymbolSearch::_on_item_activated(int p_index)
 void SymbolSearch::_on_filter_gui_input(const Ref<InputEvent> &p_event)
 {
         Ref<InputEventKey> key_event = p_event;
-        if (!key_event.is_valid() || !key_event->is_pressed() || key_event->is_echo()) return;
+        if (!key_event.is_valid() || !key_event->is_pressed()) return;
 
         auto key = key_event->get_keycode();
+        if (key_event->is_echo() && key != KEY_UP && key != KEY_DOWN) return;
+
         if (key == KEY_ESCAPE)
         {
                 _restore_original_cursor();
